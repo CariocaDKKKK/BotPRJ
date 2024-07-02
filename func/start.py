@@ -27,6 +27,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             f'Olá {update.effective_user.first_name}, você já está habilitado para usar o bot.\n\n'
             'Comandos disponíveis:\n'
             '/cpf - Consultar informações por CPF\n'
+            '/cep - Consultar informações por CEP\n'
+            '/mae - Consultar informações por mae\n'
+            '/nome - Consultar informações por nome\n'
+            '/email - Consultar informações por email\n'
+            '/telefone - Consultar informações por telefone\n'
+            '/titulo - EM BREVE\n'
         )
     else:
         await update.message.reply_text(
