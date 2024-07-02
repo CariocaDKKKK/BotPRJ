@@ -23,7 +23,7 @@ nic2proxy==0.10
 numpy
 openpyxl==3.1.2
 packaging==24.0
-pandas==2.2.2
+pandas
 pefile==2023.2.7
 pyinstaller==6.7.0
 pyinstaller-hooks-contrib==2024.6
