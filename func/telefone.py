@@ -6,35 +6,15 @@ from datetime import datetime
 from telegram import Update, InputFile
 from telegram.ext import ContextTypes
 
+from db import load_backup, save_backup
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Caminho do arquivo de backup
-BACKUP_FILE = 'bot_backup.bak'
-
-# Função para carregar os dados do arquivo de backup
-def load_backup():
-    global authorized_users, user_usage
-    if os.path.exists(BACKUP_FILE):
-        with open(BACKUP_FILE, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-            authorized_users = set(data['authorized_users'])
-            user_usage = {int(k): v for k, v in data['user_usage'].items()}
-
-# Função para salvar os dados no arquivo de backup
-def save_backup(authorized_users, user_usage):
-    data = {
-        'authorized_users': list(authorized_users),
-        'user_usage': user_usage
-    }
-    with open('bot_backup.bak', 'w', encoding='utf-8') as file:
-        json.dump(data, file, ensure_ascii=False, indent=4)
-
 # Função para resetar a contagem de uso diário
-def reset_daily_usage():
-    global user_usage
+def reset_daily_usage(authorized_users, user_usage):
     for user_id in user_usage:
         user_usage[user_id] = 0
-    save_backup()
+    save_backup(authorized_users, user_usage)
     logging.info("Contagem de uso diário resetada")
 
 # Função para formatar os dados do JSON em uma string legível

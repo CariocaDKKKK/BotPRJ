@@ -28,7 +28,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             'Comandos disponíveis:\n'
             '/cpf - Consultar informações por CPF\n'
             '/cep - Consultar informações por CEP\n'
-            '/mae - Consultar informações por mae\n'
+            '/mae - Consultar informações por mãe\n'
             '/nome - Consultar informações por nome\n'
             '/email - Consultar informações por email\n'
             '/telefone - Consultar informações por telefone\n'
@@ -36,8 +36,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         )
     else:
         await update.message.reply_text(
-            f'{update.effective_user.first_name}, Este é um bot de consulta exclusivo para membros da Panela. '
+            f'{update.effective_user.first_name}, este é um bot de consulta exclusivo para membros da Panela. '
             f'Seu ID de usuário é {user_id}. Por favor, envie seu ID para @MestreSplinterOFC para ser cadastrado.'
         )
         logging.info(f'Comando /start usado por {update.effective_user.first_name} (ID: {user_id})')
-

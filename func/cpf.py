@@ -6,35 +6,15 @@ from datetime import datetime
 from telegram import Update, InputFile
 from telegram.ext import ContextTypes
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+from db import load_backup, save_backup
 
-# Caminho do arquivo de backup
-BACKUP_FILE = 'bot_backup.bak'
-
-# Função para carregar os dados do arquivo de backup
-def load_backup():
-    global authorized_users, user_usage
-    if os.path.exists(BACKUP_FILE):
-        with open(BACKUP_FILE, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-            authorized_users = set(data['authorized_users'])
-            user_usage = {int(k): v for k, v in data['user_usage'].items()}
-
-# Função para salvar os dados no arquivo de backup
-def save_backup(authorized_users, user_usage):
-    data = {
-        'authorized_users': list(authorized_users),
-        'user_usage': user_usage
-    }
-    with open('bot_backup.bak', 'w', encoding='utf-8') as file:
-        json.dump(data, file, ensure_ascii=False, indent=4)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levellevel)s - %(message)s')
 
 # Função para resetar a contagem de uso diário
-def reset_daily_usage():
-    global user_usage
+def reset_daily_usage(authorized_users, user_usage):
     for user_id in user_usage:
         user_usage[user_id] = 0
-    save_backup()
+    save_backup(authorized_users, user_usage)
     logging.info("Contagem de uso diário resetada")
 
 # Função para formatar os dados do JSON em uma string legível
@@ -59,8 +39,7 @@ async def cpf(update: Update, context: ContextTypes.DEFAULT_TYPE, authorized_use
         return
 
     if len(context.args) != 1:
-        await update.message.reply_text(
-            "Por favor, use o comando /cpf seguido do número do CPF. Exemplo: /cpf 86914804168")
+        await update.message.reply_text("Por favor, use o comando /cpf seguido do número do CPF. Exemplo: /cpf 86914804168")
         return
 
     # Verificar o uso diário do usuário
@@ -105,8 +84,7 @@ async def cpf(update: Update, context: ContextTypes.DEFAULT_TYPE, authorized_use
 
         # Envia mensagem com o uso restante
         remaining_usage = DAILY_LIMIT - user_usage[user_id]
-        await update.message.reply_text(
-            f"Você tem {remaining_usage}/{DAILY_LIMIT} consultas restantes para hoje. O limite será resetado às 00:00.")
+        await update.message.reply_text(f"Você tem {remaining_usage}/{DAILY_LIMIT} consultas restantes para hoje. O limite será resetado às 00:00.")
 
         # Log para administrador
         await context.bot.send_message(chat_id=ADMIN_ID, text=f'Usuário {user_id} fez uma consulta no CPF {cpf_number}.')
