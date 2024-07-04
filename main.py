@@ -28,7 +28,7 @@ def main():
     global authorized_users, user_usage
     authorized_users, user_usage = load_backup()
 
-    app = ApplicationBuilder().token("7117120727:AAGS-L0UnMqFFad0g09QNNCPcnZdD7pvTS8").build()
+    app = ApplicationBuilder().token("6361700021:AAFMSDmrihkTk4koad542YklYEJNoSxUjQo").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("addid", lambda update, context: addid(update, context, ADMIN_ID)))
