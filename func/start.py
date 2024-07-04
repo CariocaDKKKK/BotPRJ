@@ -1,26 +1,16 @@
-import os
-import json
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes
+from db import load_backup
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Caminho do arquivo de backup
-BACKUP_FILE = 'bot_backup.bak'
-
-# Função para carregar os dados do arquivo de backup
-def load_backup():
-    authorized_users = set()
-    if os.path.exists(BACKUP_FILE):
-        with open(BACKUP_FILE, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-            authorized_users = set(data.get('authorized_users', []))
-    return authorized_users
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = update.effective_user.id
-    authorized_users = load_backup()
+
+    # Carregar os dados do banco de dados
+    authorized_users, _ = load_backup()
 
     if user_id in authorized_users:
         await update.message.reply_text(

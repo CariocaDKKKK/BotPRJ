@@ -1,6 +1,5 @@
 import requests
 import os
-import json
 import logging
 from datetime import datetime, timedelta
 from telegram import Update, InputFile
@@ -15,14 +14,6 @@ CACHE_DIR = "cachecpf"
 # Cria o diretório de cache se não existir
 if not os.path.exists(CACHE_DIR):
     os.makedirs(CACHE_DIR)
-
-
-# Função para resetar a contagem de uso diário
-def reset_daily_usage(authorized_users, user_usage):
-    for user_id in user_usage:
-        user_usage[user_id] = 0
-    save_backup(authorized_users, user_usage)
-    logging.info("Contagem de uso diário resetada")
 
 
 # Função para formatar os dados do JSON em uma string legível
@@ -56,11 +47,17 @@ def clear_old_cache_files():
 async def cpf(update: Update, context: ContextTypes.DEFAULT_TYPE, authorized_users, user_usage, DAILY_LIMIT,
               ADMIN_ID) -> None:
     user_id = update.effective_user.id
+
+    # Recarregar dados do banco de dados para garantir que estão atualizados
+    authorized_users, user_usage = load_backup()
+
+    # Verificar se o usuário está autorizado
     if user_id not in authorized_users:
         await update.message.reply_text("Você não tem permissão para usar este comando.")
         logging.warning(f'{update.effective_user.first_name} (ID: {user_id}) tentou usar /cpf sem permissão')
         return
 
+    # Verificar o número de argumentos
     if len(context.args) != 1:
         await update.message.reply_text(
             "Por favor, use o comando /cpf seguido do número do CPF. Exemplo: /cpf 86914804168")
@@ -72,6 +69,7 @@ async def cpf(update: Update, context: ContextTypes.DEFAULT_TYPE, authorized_use
 
     if user_usage[user_id] >= DAILY_LIMIT:
         await update.message.reply_text("Você atingiu o limite diário de consultas. O limite será resetado às 00:00.")
+        logging.warning(f'{update.effective_user.first_name} (ID: {user_id}) atingiu o limite diário de consultas')
         return
 
     cpf_number = context.args[0]

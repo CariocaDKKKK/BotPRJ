@@ -1,25 +1,22 @@
 import os
-import json
 import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler
 
 from func.start import start
 from func.addid import addid
-from func.cpf import cpf, reset_daily_usage
-from func.cep import cep, reset_daily_usage
-from func.nome import nome, reset_daily_usage
-from func.telefone import telefone, reset_daily_usage
-from func.email import email, reset_daily_usage
-from func.mae import mae, reset_daily_usage
+from func.cpf import cpf
+from func.cep import cep
+from func.nome import nome
+from func.telefone import telefone
+from func.email import email
+from func.mae import mae
 
-from db import load_backup, save_backup
+from db import load_backup, save_backup, reset_daily_usage, load_data
+from polling import start_polling
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Lista de usuários autorizados e uso diário
-authorized_users, user_usage = load_backup()
 
 # Limite diário de consultas por usuário
 DAILY_LIMIT = 90
@@ -52,4 +49,5 @@ def main():
     app.run_polling()
 
 if __name__ == '__main__':
+    start_polling()  # Inicia o polling em uma thread separada
     main()

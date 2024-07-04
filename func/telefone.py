@@ -1,6 +1,5 @@
 import requests
 import os
-import json
 import logging
 from datetime import datetime, timedelta
 from telegram import Update, InputFile
@@ -16,12 +15,6 @@ CACHE_DIR = "cachetelefone"
 if not os.path.exists(CACHE_DIR):
     os.makedirs(CACHE_DIR)
 
-# Função para resetar a contagem de uso diário
-def reset_daily_usage(authorized_users, user_usage):
-    for user_id in user_usage:
-        user_usage[user_id] = 0
-    save_backup(authorized_users, user_usage)
-    logging.info("Contagem de uso diário resetada")
 
 # Função para formatar os dados do JSON em uma string legível
 def format_data(data, indent=0):
@@ -29,13 +22,17 @@ def format_data(data, indent=0):
     indent_space = "  " * indent
     if isinstance(data, dict):
         for key, value in data.items():
-            formatted_data += f"{indent_space}{key}: {value}\n" if not isinstance(value, (dict, list)) else f"{indent_space}{key}:\n{format_data(value, indent + 1)}"
+            if not isinstance(value, (dict, list)):
+                formatted_data += f"{indent_space}{key}: {value}\n"
+            else:
+                formatted_data += f"{indent_space}{key}:\n{format_data(value, indent + 1)}"
     elif isinstance(data, list):
         for item in data:
             formatted_data += format_data(item, indent + 1)
     else:
         formatted_data += f"{indent_space}{data}\n"
     return formatted_data
+
 
 # Função para limpar o cache de arquivos com mais de 7 dias
 def clear_old_cache_files():
@@ -48,13 +45,21 @@ def clear_old_cache_files():
                 os.remove(file_path)
                 logging.info(f"Arquivo de cache removido: {file_path}")
 
-async def telefone(update: Update, context: ContextTypes.DEFAULT_TYPE, authorized_users, user_usage, DAILY_LIMIT, ADMIN_ID) -> None:
+
+async def telefone(update: Update, context: ContextTypes.DEFAULT_TYPE, authorized_users, user_usage, DAILY_LIMIT,
+                   ADMIN_ID) -> None:
     user_id = update.effective_user.id
+
+    # Recarregar dados do banco de dados para garantir que estão atualizados
+    authorized_users, user_usage = load_backup()
+
+    # Verificar se o usuário está autorizado
     if user_id not in authorized_users:
         await update.message.reply_text("Você não tem permissão para usar este comando.")
         logging.warning(f'{update.effective_user.first_name} (ID: {user_id}) tentou usar /telefone sem permissão')
         return
 
+    # Verificar o número de argumentos
     if len(context.args) != 1:
         await update.message.reply_text(
             "Por favor, use o comando /telefone seguido do número do telefone. Exemplo: /telefone 21965502993")
@@ -66,6 +71,7 @@ async def telefone(update: Update, context: ContextTypes.DEFAULT_TYPE, authorize
 
     if user_usage[user_id] >= DAILY_LIMIT:
         await update.message.reply_text("Você atingiu o limite diário de consultas. O limite será resetado às 00:00.")
+        logging.warning(f'{update.effective_user.first_name} (ID: {user_id}) atingiu o limite diário de consultas')
         return
 
     telefone_number = context.args[0]
@@ -78,7 +84,8 @@ async def telefone(update: Update, context: ContextTypes.DEFAULT_TYPE, authorize
 
         # Envia o arquivo do cache ao administrador
         with open(file_path, 'rb') as file:
-            await context.bot.send_document(chat_id=ADMIN_ID, document=InputFile(file, filename=f"Telefone: {telefone_number}.txt"))
+            await context.bot.send_document(chat_id=ADMIN_ID,
+                                            document=InputFile(file, filename=f"Telefone: {telefone_number}.txt"))
 
         logging.info(f'Arquivo de cache enviado para {user_id} e administrador para o telefone {telefone_number}')
     else:
@@ -91,7 +98,8 @@ async def telefone(update: Update, context: ContextTypes.DEFAULT_TYPE, authorize
 
             if data.get("data") is None and data.get("status") == 401:
                 await update.message.reply_text("⚠️ DADOS NAO ENCONTRADOS ⚠️")
-                logging.warning(f'Consulta retornou dados não encontrados para o telefone {telefone_number} por {user_id}')
+                logging.warning(
+                    f'Consulta retornou dados não encontrados para o telefone {telefone_number} por {user_id}')
                 return
 
             # Formata os dados do JSON em uma string legível
@@ -103,11 +111,13 @@ async def telefone(update: Update, context: ContextTypes.DEFAULT_TYPE, authorize
 
             # Envia o arquivo ao usuário
             with open(file_path, 'rb') as file:
-                await update.message.reply_document(document=InputFile(file, filename=f"Telefone: {telefone_number}.txt"))
+                await update.message.reply_document(
+                    document=InputFile(file, filename=f"Telefone: {telefone_number}.txt"))
 
             # Envia o arquivo ao administrador
             with open(file_path, 'rb') as file:
-                await context.bot.send_document(chat_id=ADMIN_ID, document=InputFile(file, filename=f"Telefone: {telefone_number}.txt"))
+                await context.bot.send_document(chat_id=ADMIN_ID,
+                                                document=InputFile(file, filename=f"Telefone: {telefone_number}.txt"))
 
             # Incrementa o contador de uso do usuário
             user_usage[user_id] += 1
@@ -115,14 +125,16 @@ async def telefone(update: Update, context: ContextTypes.DEFAULT_TYPE, authorize
 
             # Envia mensagem com o uso restante
             remaining_usage = DAILY_LIMIT - user_usage[user_id]
-            await update.message.reply_text(f"Você tem {remaining_usage}/{DAILY_LIMIT} consultas restantes para hoje. O limite será resetado às 00:00.")
+            await update.message.reply_text(
+                f"Você tem {remaining_usage}/{DAILY_LIMIT} consultas restantes para hoje. O limite será resetado às 00:00.")
 
             logging.info(f'Usuário {user_id} fez uma consulta no telefone {telefone_number}')
 
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
                 await update.message.reply_text("⚠️ DADOS NAO ENCONTRADOS ⚠️")
-                logging.warning(f'Consulta retornou dados não encontrados para o telefone {telefone_number} por {user_id}')
+                logging.warning(
+                    f'Consulta retornou dados não encontrados para o telefone {telefone_number} por {user_id}')
             else:
                 await update.message.reply_text(f"Ocorreu um erro ao consultar o Telefone.")
                 logging.error(f'Erro ao consultar Telefone {telefone_number} por {user_id}: {e}')
