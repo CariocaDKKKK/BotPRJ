@@ -3,6 +3,7 @@ import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from telegram.ext import ApplicationBuilder, CommandHandler
 
+
 from func.start import start
 from func.addid import addid
 from func.cpf import cpf
@@ -28,7 +29,7 @@ def main():
     global authorized_users, user_usage
     authorized_users, user_usage = load_backup()
 
-    app = ApplicationBuilder().token("6361700021:AAFMSDmrihkTk4koad542YklYEJNoSxUjQo").build()
+    app = ApplicationBuilder().token("7117120727:AAGS-L0UnMqFFad0g09QNNCPcnZdD7pvTS8").build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("addid", lambda update, context: addid(update, context, ADMIN_ID)))
@@ -41,7 +42,7 @@ def main():
 
     # Configura o agendador para resetar a contagem de uso diariamente às 00:00
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(lambda: reset_daily_usage(authorized_users, user_usage), trigger='cron', hour=0, minute=0)
+    scheduler.add_job(reset_daily_usage, trigger='cron', hour=0, minute=0)
     scheduler.start()
 
     logging.info("Bot iniciado e aguardando comandos")
